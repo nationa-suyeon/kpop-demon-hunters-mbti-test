@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>케이팝 데몬 헌터스 캐릭터 유형 테스트</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn {
+            background-image: linear-gradient(to right, #6EE7B7, #34D399); /* Green gradient */
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 9999px; /* Pill shape */
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 211, 153, 0.4);
+            border: none;
+            cursor: pointer;
+            font-size: 1.125rem; /* Larger font */
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(52, 211, 153, 0.6);
+        }
+        .option-btn {
+            background-color: #E0F2F7; /* Light blue */
+            color: #2C3E50; /* Dark text */
+            padding: 1rem 1.5rem;
+            margin: 0.5rem 0;
+            border-radius: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-align: left;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .option-btn:hover {
+            background-color: #B3E0F2; /* Slightly darker blue on hover */
+            border-color: #007BFF; /* Blue border on hover */
+        }
+        .option-btn.selected {
+            background-color: #3B82F6; /* Blue */
+            color: white;
+            border-color: #1D4ED8;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 9999px;
+            height: 0.75rem;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-image: linear-gradient(to right, #3B82F6, #60A5FA); /* Blue gradient */
+            width: 0%;
+            border-radius: 9999px;
+            transition: width 0.3s ease-in-out;
+        }
+        .character-card {
+            background-color: #F8F9FA; /* Off-white */
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            text-align: left;
+            width: 100%;
+        }
+        .character-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2C3E50;
+            margin-bottom: 0.5rem;
+        }
+        .character-card p {
+            font-size: 1rem;
+            color: #555;
+            line-height: 1.5;
+        }
+        .character-image {
+            width: 150px; /* Adjust size as needed */
+            height: 150px;
+            background-color: #ddd; /* Placeholder background */
+            border-radius: 50%;
+            margin: 1rem auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            color: #888;
+            overflow: hidden; /* Ensure content stays within circle */
+        }
+        /* Simple animation for result display */
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .result-section {
+            animation: fadeInScale 0.5s ease-out forwards;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            .btn {
+                padding: 0.6rem 1.5rem;
+                font-size: 1rem;
+            }
+            .option-btn {
+                padding: 0.8rem 1rem;
+                font-size: 0.9rem;
+            }
+            .character-card h3 {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen bg-gray-100">
+    <div class="container">
+        <!-- 랜딩 페이지 -->
+        <div id="landing-page" class="flex flex-col items-center justify-center">
+            <h1 class="text-4xl font-extrabold text-gray-800 mb-6 leading-tight">
+                <span class="block">〈케이팝 데몬 헌터스〉</span>
+                <span class="block mt-2">내가 누구?</span>
+            </h1>
+            <p class="text-lg text-gray-600 mb-8">3분 테스트로 당신의 케데헌 캐릭터 유형을 알아보세요!</p>
+            <button id="start-test-btn" class="btn">3분 테스트 시작</button>
+        </div>
+
+        <!-- 질문 페이지 -->
+        <div id="question-page" class="hidden w-full">
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            <p id="question-number" class="text-lg text-gray-700 mb-4 font-semibold"></p>
+            <h2 id="question-text" class="text-2xl font-bold text-gray-800 mb-8 leading-relaxed"></h2>
+            <div class="options-container flex flex-col gap-4">
+                <button id="option-a" class="option-btn" data-value="1"></button>
+                <button id="option-b" class="option-btn" data-value="0"></button>
+            </div>
+        </div>
+
+        <!-- 결과 페이지 -->
+        <div id="result-page" class="hidden w-full result-section">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">당신의 캐릭터는...</h2>
+            <div class="character-image">
+                <!-- 3D 애니메이션 대신 임시 이미지/아이콘 -->
+                <span id="character-icon">✨</span>
+            </div>
+            <h3 id="result-character-name" class="text-4xl font-extrabold text-blue-600 mt-4 mb-2"></h3>
+            <p id="result-mbti" class="text-xl font-semibold text-gray-700 mb-6"></p>
+            <p id="result-keywords" class="text-md text-gray-600 mb-8"></p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                <div class="character-card">
+                    <h3 class="text-blue-500">잘 맞는 친구</h3>
+                    <p id="compatible-friend-name" class="text-xl font-semibold text-gray-800"></p>
+                    <p id="compatible-friend-mbti" class="text-md text-gray-600"></p>
+                    <p id="compatible-friend-keywords" class="text-sm text-gray-500 mt-1"></p>
+                </div>
+                <div class="character-card">
+                    <h3 class="text-red-500">앙숙 친구</h3>
+                    <p id="opposite-friend-name" class="text-xl font-semibold text-gray-800"></p>
+                    <p id="opposite-friend-mbti" class="text-md text-gray-600"></p>
+                    <p id="opposite-friend-keywords" class="text-sm text-gray-500 mt-1"></p>
+                </div>
+            </div>
+
+            <div class="mt-8 flex flex-col gap-4 w-full">
+                <button id="share-result-btn" class="btn bg-blue-500 hover:bg-blue-600">결과 공유하고 친구 초대</button>
+                <button id="hey-d-link-btn" class="btn bg-purple-500 hover:bg-purple-600">Hey.D에서 캐릭터와 대화해보기</button>
+                <button id="restart-test-btn" class="btn bg-gray-400 hover:bg-gray-500">테스트 다시 하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM 요소 가져오기
+        const landingPage = document.getElementById('landing-page');
+        const questionPage = document.getElementById('question-page');
+        const resultPage = document.getElementById('result-page');
+        const startTestBtn = document.getElementById('start-test-btn');
+        const questionNumberElem = document.getElementById('question-number');
+        const questionTextElem = document.getElementById('question-text');
+        const optionAButton = document.getElementById('option-a');
+        const optionBButton = document.getElementById('option-b');
+        const progressBar = document.getElementById('progress-bar');
+
+        const resultCharacterNameElem = document.getElementById('result-character-name');
+        const resultMbtiElem = document.getElementById('result-mbti');
+        const resultKeywordsElem = document.getElementById('result-keywords');
+        const characterIconElem = document.getElementById('character-icon');
+
+        const compatibleFriendNameElem = document.getElementById('compatible-friend-name');
+        const compatibleFriendMbtiElem = document.getElementById('compatible-friend-mbti');
+        const compatibleFriendKeywordsElem = document.getElementById('compatible-friend-keywords');
+        const oppositeFriendNameElem = document.getElementById('opposite-friend-name');
+        const oppositeFriendMbtiElem = document.getElementById('opposite-friend-mbti');
+        const oppositeFriendKeywordsElem = document.getElementById('opposite-friend-keywords');
+
+        const shareResultBtn = document.getElementById('share-result-btn');
+        const heyDLinkBtn = document.getElementById('hey-d-link-btn');
+        const restartTestBtn = document.getElementById('restart-test-btn');
+
+        // 테스트 상태 변수
+        let currentQuestionIndex = 0;
+        let answers = new Array(32).fill(-1); // 0 또는 1로 채워질 답변 배열
+
+        // MBTI 진단 설문 32 문항 풀
+        // 각 문항은 [질문 텍스트, 선택지 A 텍스트, 선택지 B 텍스트, 해당 축]
+        const questions = [
+            // E-I 축 (index 0-7)
+            { q: "새로운 사람들과의 네트워킹은", a: "에너지 충전", b: "에너지 소모", axis: "EI" }, // Q1
+            { q: "행사에서 소개팅 요청이 들어오면", a: "바로 OK", b: "시간이 필요하다", axis: "EI" }, // Q10
+            { q: "취미 모임에 참여한다면", a: "여럿과 어울림", b: "혼자 깊게 파고듦", axis: "EI" }, // Q13
+            { q: "여행 중 찍은 사진은", a: "즉석에서 스토리 업로드", b: "귀국 후 정리", axis: "EI" }, // Q15
+            { q: "대규모 행사에 참석하는 것은", a: "즐겁다", b: "피곤하다", axis: "EI" }, // Q21
+            { q: "뉴스 소비 방식은", a: "다양한 주제 헤드라인", b: "관심 분야 심층 기사", axis: "EI" }, // Q23
+            { q: "컨퍼런스 Q&A 시간에", a: "즉흥적으로 질문", b: "메모 후 정리", axis: "EI" }, // Q28
+            { q: "아이디어를 설명할 때", a: "말로 시연", b: "글이나 다이어그램", axis: "EI" }, // Q31
+
+            // S-N 축 (index 8-15)
+            { q: "아이디어 발상법은", a: "떠오르는 대로 브레인스토밍", b: "사례·데이터 먼저 조사", axis: "SN" }, // Q5
+            { q: "새로운 기술을 학습할 때", a: "직접 만져보며 익힘", b: "매뉴얼부터 읽음", axis: "SN" }, // Q8
+            { q: "모르는 동네 식당을 선택할 때", a: "현장 분위기·감각", b: "리뷰·평점 확인", axis: "SN" }, // Q9
+            { q: "팀 브레인스토밍에서", a: "대화로 생각 확장", b: "문서로 정리 후 공유", axis: "SN" }, // Q16
+            { q: "새 앱의 UX를 평가할 때", a: "직관적인 인상", b: "가이드라인과 비교", axis: "SN" }, // Q18
+            { q: "새로운 툴을 도입할 때", a: "베타 버전을 바로 사용", b: "안정화 후 사용", axis: "SN" }, // Q24
+            { q: "문학·영화 취향은", a: "미지·판타지", b: "현실·논픽션", axis: "SN" }, // Q27
+            { q: "새로운 취미를 시작할 때", a: "먼저 경험", b: "강의·교재부터", axis: "SN" }, // Q32
+
+            // T-F 축 (index 16-23)
+            { q: "회의 중 논쟁이 생기면", a: "논리로 설득", b: "분위기 조율", axis: "TF" }, // Q3
+            { q: "친구에게 조언할 때", a: "팩트 기반 해결책", b: "공감·위로 중심", axis: "TF" }, // Q6
+            { q: "큰 의사결정 전에는", a: "장단점 표 작성", b: "직감 따름", axis: "TF" }, // Q11
+            { q: "프로젝트 오류 시", a: "원인 로깅 후 수정", b: "느낌적 느낌으로 수정", axis: "TF" }, // Q14
+            { q: "친구 생일 선물을 고를 때", a: "서프라이즈 이벤트", b: "필요한 것 직접 물어봄", axis: "TF" }, // Q19
+            { q: "문제 해결 접근 방식은", a: "이론-원칙 우선", b: "사례-경험 우선", axis: "TF" }, // Q20
+            { q: "피드백을 줄 때", a: "직설적 코멘트", b: "완충 표현", axis: "TF" }, // Q25
+            { q: "갈등 상황에서", a: "규칙·원칙 적용", b: "관계·감정 고려", axis: "TF" }, // Q29
+
+            // J-P 축 (index 24-31)
+            { q: "주말 계획은", a: "즉흥으로 즐긴다", b: "미리 세세히 짠다", axis: "JP" }, // Q2
+            { q: "휴가 사진 정리 방식은", a: "폴더별 체계적 분류", b: "기분 내키면 정리", axis: "JP" }, // Q4
+            { q: "출장 전날 짐 싸기는", a: "일주일 전 완료", b: "당일 아침에 급히", axis: "JP" }, // Q7
+            { q: "작업 중 알림 음이 울리면", a: "즉시 확인", b: "몰아서 확인", axis: "JP" }, // Q12
+            { q: "칼퇴 직전 추가 요청이 오면", a: "즉시 처리", b: "다음날 처리", axis: "JP" }, // Q17
+            { q: "마감 직전 변경 사항이 생기면", a: "유연하게 수용", b: "계획 유지", axis: "JP" }, // Q22
+            { q: "일정 변화에 대해", a: "즉흥적으로 대응", b: "재계획 필수", axis: "JP" }, // Q26
+            { q: "업무 체크리스트는", a: "세분화·시간 박스", b: "큰 틀만 기록", axis: "JP" }, // Q30
+        ];
+
+        // 캐릭터 & MBTI 매핑 및 키워드
+        const MBTI_DATA = {
+            "ENTJ": { name: "루미 (Huntr/x)", keywords: "리더십·전략·결단", icon: "👑" },
+            "ENFP": { name: "미라 (Huntr/x)", keywords: "자유·창의·열정", icon: "🌈" },
+            "ENTP": { name: "조이 (Huntr/x)", keywords: "재치·실험·변화", icon: "💡" },
+            "INFJ": { name: "지누 (Saja Boys)", keywords: "이상·비전·헌신", icon: "✨" },
+            "ESFP": { name: "로맨스 사자", keywords: "팬서비스·사교·긍정", icon: "💖" },
+            "INTP": { name: "미스터리 사자", keywords: "분석·호기심·독립", icon: "🔍" },
+            "ESTP": { name: "애비 사자", keywords: "액션·에너지·즉흥", icon: "💥" },
+            "ISFP": { name: "베이비 사자", keywords: "순수·감성·유연", icon: "🌸" },
+            "ISTP": { name: "까치 ‘써씨’", keywords: "관찰·정찰·실용", icon: "🛠️" },
+            "ISFJ": { name: "호랑이 ‘더피’", keywords: "보호·헌신·안정", icon: "🐻" },
+            "INFP": { name: "한약방 아저씨", keywords: "치유·이상주의·교감", icon: "🌿" },
+            "INTJ": { name: "귀마 (악마왕)", keywords: "전략·야망·통제", icon: "😈" },
+            "ESFJ": { name: "매니저 ‘보비’", keywords: "조정·조직·케어", icon: "🤝" },
+            "ENFJ": { name: "실린 (전설 헌터)", keywords: "멘토링·영향력·통찰", icon: "🌟" },
+            "ESTJ": { name: "‘소다팝’ 팬 아줌마", keywords: "열정·리더·규칙", icon: "🎤" },
+            "ISTJ": { name: "다크 지누", keywords: "책임·규율·내성", icon: "🔒" },
+        };
+
+        // MBTI 궁합 (잘 맞는 친구 / 앙숙 친구) - 단순화된 매핑
+        const COMPATIBILITY_MAP = {
+            "ENTJ": { compatible: "INFP", opposite: "ISFP" },
+            "ENFP": { compatible: "INTJ", opposite: "ISTJ" },
+            "ENTP": { compatible: "INFJ", opposite: "ISFJ" },
+            "INFJ": { compatible: "ENTP", opposite: "ESTP" },
+            "ESFP": { compatible: "ISTJ", opposite: "INTJ" },
+            "INTP": { compatible: "ENFJ", opposite: "ESFJ" },
+            "ESTP": { compatible: "INFJ", opposite: "INFP" },
+            "ISFP": { compatible: "ENTJ", opposite: "ESTJ" },
+            "ISTP": { compatible: "ESFJ", opposite: "ENFJ" },
+            "ISFJ": { compatible: "ENTP", opposite: "INTP" },
+            "INFP": { compatible: "ENTJ", opposite: "ESTP" },
+            "INTJ": { compatible: "ENFP", opposite: "ESFP" },
+            "ESFJ": { compatible: "ISTP", opposite: "INTP" },
+            "ENFJ": { compatible: "INTP", opposite: "ISTP" },
+            "ESTJ": { compatible: "ISFP", opposite: "INFP" },
+            "ISTJ": { compatible: "ESFP", opposite: "ENFP" },
+        };
+
+        // 테스트 시작 함수
+        function startTest() {
+            landingPage.classList.add('hidden');
+            questionPage.classList.remove('hidden');
+            currentQuestionIndex = 0;
+            answers.fill(-1); // 답변 초기화
+            displayQuestion();
+        }
+
+        // 질문 표시 함수
+        function displayQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                const q = questions[currentQuestionIndex];
+                questionNumberElem.textContent = `${currentQuestionIndex + 1} / ${questions.length}`;
+                questionTextElem.textContent = q.q;
+                optionAButton.textContent = q.a;
+                optionBButton.textContent = q.b;
+
+                // 선택된 옵션 스타일 초기화
+                optionAButton.classList.remove('selected');
+                optionBButton.classList.remove('selected');
+
+                // 진행률 업데이트
+                const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+                progressBar.style.width = `${progress}%`;
+            } else {
+                calculateResult();
+            }
+        }
+
+        // 답변 선택 처리 함수
+        function handleAnswer(value) {
+            answers[currentQuestionIndex] = value;
+            currentQuestionIndex++;
+            displayQuestion();
+        }
+
+        // MBTI 결과 계산 함수
+        function calculateResult() {
+            const scores = { EI: 0, SN: 0, TF: 0, JP: 0 };
+
+            // 각 축별 점수 계산
+            // E-I: Q1, Q10, Q13, Q15, Q21, Q23, Q28, Q31 (index 0-7)
+            for (let i = 0; i < 8; i++) {
+                scores.EI += answers[i];
+            }
+            // S-N: Q5, Q8, Q9, Q16, Q18, Q24, Q27, Q32 (index 8-15)
+            for (let i = 8; i < 16; i++) {
+                scores.SN += answers[i];
+            }
+            // T-F: Q3, Q6, Q11, Q14, Q19, Q20, Q25, Q29 (index 16-23)
+            for (let i = 16; i < 24; i++) {
+                scores.TF += answers[i];
+            }
+            // J-P: Q2, Q4, Q7, Q12, Q17, Q22, Q26, Q30 (index 24-31)
+            for (let i = 24; i < 32; i++) {
+                scores.JP += answers[i];
+            }
+
+            // MBTI 유형 결정
+            const ei = scores.EI >= 4 ? "E" : "I";
+            const sn = scores.SN >= 4 ? "S" : "N";
+            const tf = scores.TF >= 4 ? "T" : "F";
+            const jp = scores.JP >= 4 ? "J" : "P";
+
+            const mbtiType = `${ei}${sn}${tf}${jp}`;
+            displayResult(mbtiType);
+        }
+
+        // 결과 표시 함수
+        function displayResult(mbtiType) {
+            questionPage.classList.add('hidden');
+            resultPage.classList.remove('hidden');
+
+            const characterData = MBTI_DATA[mbtiType];
+            const compatibility = COMPATIBILITY_MAP[mbtiType];
+
+            if (characterData) {
+                resultCharacterNameElem.textContent = characterData.name;
+                resultMbtiElem.textContent = `MBTI: ${mbtiType}`;
+                resultKeywordsElem.textContent = characterData.keywords;
+                characterIconElem.textContent = characterData.icon;
+
+                // 잘 맞는 친구
+                const compatibleChar = MBTI_DATA[compatibility.compatible];
+                compatibleFriendNameElem.textContent = compatibleChar.name;
+                compatibleFriendMbtiElem.textContent = `MBTI: ${compatibility.compatible}`;
+                compatibleFriendKeywordsElem.textContent = compatibleChar.keywords;
+
+                // 앙숙 친구
+                const oppositeChar = MBTI_DATA[compatibility.opposite];
+                oppositeFriendNameElem.textContent = oppositeChar.name;
+                oppositeFriendMbtiElem.textContent = `MBTI: ${compatibility.opposite}`;
+                oppositeFriendKeywordsElem.textContent = oppositeChar.keywords;
+
+            } else {
+                resultCharacterNameElem.textContent = "결과를 찾을 수 없습니다.";
+                resultMbtiElem.textContent = "";
+                resultKeywordsElem.textContent = "";
+                characterIconElem.textContent = "❓";
+                compatibleFriendNameElem.textContent = "";
+                compatibleFriendMbtiElem.textContent = "";
+                compatibleFriendKeywordsElem.textContent = "";
+                oppositeFriendNameElem.textContent = "";
+                oppositeFriendMbtiElem.textContent = "";
+                oppositeFriendKeywordsElem.textContent = "";
+            }
+        }
+
+        // 테스트 다시 시작 함수
+        function restartTest() {
+            resultPage.classList.add('hidden');
+            landingPage.classList.remove('hidden');
+            currentQuestionIndex = 0;
+            answers.fill(-1);
+            progressBar.style.width = '0%';
+        }
+
+        // 이벤트 리스너
+        startTestBtn.addEventListener('click', startTest);
+
+        optionAButton.addEventListener('click', () => {
+            optionAButton.classList.add('selected');
+            optionBButton.classList.remove('selected');
+            setTimeout(() => handleAnswer(parseInt(optionAButton.dataset.value)), 200); // 짧은 딜레이 후 다음 질문
+        });
+
+        optionBButton.addEventListener('click', () => {
+            optionBButton.classList.add('selected');
+            optionAButton.classList.remove('selected');
+            setTimeout(() => handleAnswer(parseInt(optionBButton.dataset.value)), 200); // 짧은 딜레이 후 다음 질문
+        });
+
+        restartTestBtn.addEventListener('click', restartTest);
+
+        // 공유 버튼 (실제 공유 기능은 플랫폼에 따라 다름)
+        shareResultBtn.addEventListener('click', () => {
+            const mbti = resultMbtiElem.textContent.replace('MBTI: ', '');
+            const character = resultCharacterNameElem.textContent;
+            const shareText = `저는 케이팝 데몬 헌터스에서 ${character} (${mbti}) 유형이 나왔어요! 당신의 유형은 무엇인가요? #케이팝데몬헌터스 #MBTI테스트`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: '케이팝 데몬 헌터스 캐릭터 유형 테스트',
+                    text: shareText,
+                    url: window.location.href, // 현재 페이지 URL 공유
+                }).then(() => console.log('공유 성공'))
+                  .catch((error) => console.error('공유 실패', error));
+            } else {
+                // 웹 공유 API를 지원하지 않는 경우, 텍스트를 클립보드에 복사
+                const tempInput = document.createElement('textarea');
+                tempInput.value = shareText + '\n' + window.location.href;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                alert('결과가 클립보드에 복사되었습니다! 친구들에게 공유해보세요.'); // 사용자에게 알림
+            }
+        });
+
+        // Hey.D 링크 버튼 (실제 앱/웹 딥링크는 여기에 추가)
+        heyDLinkBtn.addEventListener('click', () => {
+            // 실제 Hey.D 앱/웹 딥링크 URL을 여기에 추가
+            window.open('https://heyd.example.com/kpopdemonhunters', '_blank'); // 예시 URL
+        });
+
+    </script>
+</body>
+</html>
