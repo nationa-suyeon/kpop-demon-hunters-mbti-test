@@ -217,7 +217,7 @@
 
             <div class="mt-8 flex flex-col gap-4 w-full">
                 <button id="share-result-btn" class="btn bg-blue-500 hover:bg-blue-600">결과 공유하고 친구 초대</button>
-                <button id="hey-d-link-btn" class="btn bg-purple-500 hover:bg-purple-600">Hey.D에서 캐릭터와 대화해보기</button>
+                <button id="hey-d-link-btn" class="btn bg-purple-500 hover:bg-purple-600">K-pop 데몬 헌터스 주인공들과 실시간 대화하기</button>
                 <button id="restart-test-btn" class="btn bg-gray-400 hover:bg-gray-500">테스트 다시 하기</button>
             </div>
         </div>
@@ -440,7 +440,7 @@
                 const compatibleChar = MBTI_DATA[compatibility.compatible];
                 compatibleFriendNameElem.textContent = compatibleChar.name;
                 compatibleFriendMbtiElem.textContent = `MBTI: ${compatibility.compatible}`;
-                compatibleFriendDescriptionElem.textContent = compatibility.compatible_desc;
+                compatibleFriendDescriptionElem.textContent = compatibleChar.description; // compatible_desc 대신 compatibleChar.description 사용
 
                 // 앙숙 친구
                 const oppositeChar = MBTI_DATA[compatibility.opposite];
