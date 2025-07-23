@@ -105,7 +105,7 @@
             color: #555;
             line-height: 1.5;
         }
-        .character-image {
+        .character-video-container {
             width: 150px; /* Adjust size as needed */
             height: 150px;
             background-color: #ddd; /* Placeholder background */
@@ -117,6 +117,14 @@
             font-size: 3rem;
             color: #888;
             overflow: hidden; /* Ensure content stays within circle */
+            position: relative; /* For absolute positioning of inner elements */
+        }
+        .character-video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ensures video fills the circular container */
+            border-radius: 50%; /* Make video circular */
+            display: block;
         }
         /* Simple animation for result display */
         @keyframes fadeInScale {
@@ -159,7 +167,7 @@
                 <span class="block">〈케이팝 데몬 헌터스〉</span>
                 <span class="block mt-2">내가 누구?</span>
             </h1>
-            <p class="text-lg text-gray-600 mb-8">3분 테스트로 당신의 케데헌 캐릭터 유형을 알아보세요!</p>
+            <p class="text-lg text-gray-600 mb-8">헌트릭스 시나리오 속 당신의 선택은?</p>
             <button id="start-test-btn" class="btn">3분 테스트 시작</button>
         </div>
 
@@ -179,20 +187,25 @@
         <!-- 결과 페이지 -->
         <div id="result-page" class="hidden w-full result-section">
             <h2 class="text-3xl font-bold text-gray-800 mb-4">당신의 캐릭터는...</h2>
-            <div class="character-image">
-                <!-- 3D 애니메이션 대신 임시 이미지/아이콘 -->
-                <span id="character-icon">✨</span>
+            <div class="character-video-container">
+                <!-- 실제 캐릭터 동영상으로 교체될 곳 -->
+                <video id="character-video" autoplay loop muted playsinline class="hidden">
+                    <source src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <!-- 비디오가 로드되지 않을 때 표시될 임시 아이콘 -->
+                <span id="character-icon" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">✨</span>
             </div>
             <h3 id="result-character-name" class="text-4xl font-extrabold text-blue-600 mt-4 mb-2"></h3>
-            <p id="result-mbti" class="text-xl font-semibold text-gray-700 mb-6"></p>
-            <p id="result-keywords" class="text-md text-gray-600 mb-8"></p>
+            <p id="result-mbti" class="text-xl font-semibold text-gray-700 mb-2"></p>
+            <p id="result-description" class="text-md text-gray-600 mb-8 leading-relaxed"></p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                 <div class="character-card">
                     <h3 class="text-blue-500">잘 맞는 친구</h3>
                     <p id="compatible-friend-name" class="text-xl font-semibold text-gray-800"></p>
                     <p id="compatible-friend-mbti" class="text-md text-gray-600"></p>
-                    <p id="compatible-friend-keywords" class="text-sm text-gray-500 mt-1"></p>
+                    <p id="compatible-friend-description" class="text-sm text-gray-500 mt-1 leading-snug"></p>
                 </div>
                 <div class="character-card">
                     <h3 class="text-red-500">앙숙 친구</h3>
@@ -224,12 +237,13 @@
 
         const resultCharacterNameElem = document.getElementById('result-character-name');
         const resultMbtiElem = document.getElementById('result-mbti');
-        const resultKeywordsElem = document.getElementById('result-keywords');
-        const characterIconElem = document.getElementById('character-icon');
+        const resultDescriptionElem = document.getElementById('result-description');
+        const characterVideoElem = document.getElementById('character-video'); // 비디오 요소를 가져옵니다.
+        const characterIconElem = document.getElementById('character-icon'); // 임시 아이콘 요소를 가져옵니다.
 
         const compatibleFriendNameElem = document.getElementById('compatible-friend-name');
         const compatibleFriendMbtiElem = document.getElementById('compatible-friend-mbti');
-        const compatibleFriendKeywordsElem = document.getElementById('compatible-friend-keywords');
+        const compatibleFriendDescriptionElem = document.getElementById('compatible-friend-description');
         const oppositeFriendNameElem = document.getElementById('opposite-friend-name');
         const oppositeFriendMbtiElem = document.getElementById('opposite-friend-mbti');
         const oppositeFriendKeywordsElem = document.getElementById('opposite-friend-keywords');
@@ -242,88 +256,88 @@
         let currentQuestionIndex = 0;
         let answers = new Array(32).fill(-1); // 0 또는 1로 채워질 답변 배열
 
-        // MBTI 진단 설문 32 문항 풀
+        // MBTI 진단 설문 32 문항 풀 (시나리오 기반으로 재구성)
         // 각 문항은 [질문 텍스트, 선택지 A 텍스트, 선택지 B 텍스트, 해당 축]
         const questions = [
-            // E-I 축 (index 0-7)
-            { q: "새로운 사람들과의 네트워킹은", a: "에너지 충전", b: "에너지 소모", axis: "EI" }, // Q1
-            { q: "행사에서 소개팅 요청이 들어오면", a: "바로 OK", b: "시간이 필요하다", axis: "EI" }, // Q10
-            { q: "취미 모임에 참여한다면", a: "여럿과 어울림", b: "혼자 깊게 파고듦", axis: "EI" }, // Q13
-            { q: "여행 중 찍은 사진은", a: "즉석에서 스토리 업로드", b: "귀국 후 정리", axis: "EI" }, // Q15
-            { q: "대규모 행사에 참석하는 것은", a: "즐겁다", b: "피곤하다", axis: "EI" }, // Q21
-            { q: "뉴스 소비 방식은", a: "다양한 주제 헤드라인", b: "관심 분야 심층 기사", axis: "EI" }, // Q23
-            { q: "컨퍼런스 Q&A 시간에", a: "즉흥적으로 질문", b: "메모 후 정리", axis: "EI" }, // Q28
-            { q: "아이디어를 설명할 때", a: "말로 시연", b: "글이나 다이어그램", axis: "EI" }, // Q31
+            // Scenario 1: World Tour Finale & Aftermath (Prologue & Huntrix)
+            { q: "당신은 K-pop 아이돌 그룹 '헌트릭스'의 멤버. 월드 투어 마지막 공연을 앞두고 있다. 공연팀이 내일 콘서트를 앞두고 파이팅 파티를 하자고 하는데,", a: "함께 참여해 인사를 나누고 힘을 얻고 충전할게요.", b: "내일 공연이 힘들지 않게 오늘은 먼저 들어가서 쉴게요.", axis: "EI" }, // Q1
+            { q: "공연을 마치고 내려온 당신. 갑작스럽게 해외의 유명 프로덕션 아티스트가 함께 콜라보를 하자고 제안하는데,", a: "바로 오케이 콜!", b: "조금 생각해볼게요.", axis: "EI" }, // Q10
+            { q: "성공적인 월드 투어를 마치고 휴식기가 주어졌다. 멤버들과 함께 휴가를 보낼 계획을 세우는데,", a: "다 같이 모여 북적이는 파티나 활동을 즐길래요.", b: "혼자만의 시간을 가지며 조용히 재충전할래요.", axis: "EI" }, // Q13
+            { q: "휴가 중 찍은 사진들을 SNS에 올리려고 한다면,", a: "찍는 즉시 실시간으로 스토리 업로드!", b: "귀국 후에 신중하게 정리해서 올릴래요.", axis: "EI" }, // Q15
+            { q: "시상식 같은 대규모 행사에 참석하는 것은 당신에게 어떤 기분인가요?", a: "수많은 팬들과 에너지를 주고받는 즐거운 시간이에요.", b: "많은 사람 속에서 에너지가 소모되어 피곤함을 느껴요.", axis: "EI" }, // Q21
+            { q: "새로운 K-pop 트렌드나 소식을 접할 때, 당신의 정보 습득 방식은?", a: "다양한 매체의 헤드라인을 빠르게 훑어봐요.", b: "관심 있는 분야의 심층 기사를 찾아 자세히 읽어요.", axis: "EI" }, // Q23
+            { q: "팬들과의 온라인 Q&A 시간에 질문이 들어왔을 때,", a: "즉흥적으로 떠오르는 대로 솔직하게 답변해요.", b: "잠시 생각하거나 메모한 후 정리된 답변을 제공해요.", axis: "EI" }, // Q28
+            { q: "신곡 아이디어를 팀원들에게 설명할 때, 당신은 주로 어떻게 표현하나요?", a: "말로 직접 시연하고 즉흥적으로 소통해요.", b: "글이나 다이어그램으로 체계적으로 정리하여 공유해요.", axis: "EI" }, // Q31
 
-            // S-N 축 (index 8-15)
-            { q: "아이디어 발상법은", a: "떠오르는 대로 브레인스토밍", b: "사례·데이터 먼저 조사", axis: "SN" }, // Q5
-            { q: "새로운 기술을 학습할 때", a: "직접 만져보며 익힘", b: "매뉴얼부터 읽음", axis: "SN" }, // Q8
-            { q: "모르는 동네 식당을 선택할 때", a: "현장 분위기·감각", b: "리뷰·평점 확인", axis: "SN" }, // Q9
-            { q: "팀 브레인스토밍에서", a: "대화로 생각 확장", b: "문서로 정리 후 공유", axis: "SN" }, // Q16
-            { q: "새 앱의 UX를 평가할 때", a: "직관적인 인상", b: "가이드라인과 비교", axis: "SN" }, // Q18
-            { q: "새로운 툴을 도입할 때", a: "베타 버전을 바로 사용", b: "안정화 후 사용", axis: "SN" }, // Q24
-            { q: "문학·영화 취향은", a: "미지·판타지", b: "현실·논픽션", axis: "SN" }, // Q27
-            { q: "새로운 취미를 시작할 때", a: "먼저 경험", b: "강의·교재부터", axis: "SN" }, // Q32
+            // Scenario 2: The Attack & Golden Debut (Huntrix & Guima's Rage)
+            { q: "비행기 하이재킹 상황, 악귀들이 나타났다! 긴급 상황에서 아이디어를 발상한다면?", a: "기존 방식에 얽매이지 않고, 떠오르는 대로 브레인스토밍해요.", b: "과거 사례나 데이터를 먼저 조사하며 현실적인 해결책을 찾아요.", axis: "SN" }, // Q5
+            { q: "새로운 악귀 퇴치 기술을 배워야 한다면, 당신의 학습 방식은?", a: "직접 만져보고 경험하며 몸으로 익혀요.", b: "관련 매뉴얼이나 이론부터 꼼꼼히 읽으며 이해해요.", axis: "SN" }, // Q8
+            { q: "악귀가 숨어있을 것 같은 낯선 동네의 식당을 선택해야 한다면,", a: "현장 분위기나 직감에 따라 선택해요.", b: "리뷰나 평점을 확인하고 정보를 바탕으로 결정해요.", axis: "SN" }, // Q9
+            { q: "신곡 'Golden'의 브레인스토밍 회의에서 당신의 역할은?", a: "자유로운 대화로 생각을 확장하고 아이디어를 낼게요.", b: "논의된 내용을 문서로 정리하고 공유하며 구체화할게요.", axis: "SN" }, // Q16
+            { q: "새로운 팬덤 앱의 UX를 평가해야 한다면?", a: "직관적인 인상과 사용감을 중요하게 생각해요.", b: "기존 가이드라인이나 원칙과 비교하며 평가해요.", axis: "SN" }, // Q18
+            { q: "새로운 무대 연출 툴이 베타 버전으로 나왔다. 당신의 사용 결정은?", a: "베타 버전이라도 바로 사용해보며 경험할래요.", b: "안정화된 후에 사용하며 위험을 최소화할래요.", axis: "SN" }, // Q24
+            { q: "헌트릭스의 세계관처럼 미지나 판타지 요소가 가득한 스토리에 대한 당신의 취향은?", a: "미지의 세계와 상상력을 자극하는 판타지를 선호해요.", b: "현실적이고 논리적인 논픽션 스토리를 더 좋아해요.", axis: "SN" }, // Q27
+            { q: "새로운 취미(예: 악기 연주)를 시작한다면, 당신의 접근 방식은?", a: "일단 직접 해보면서 배우는 것을 선호해요.", b: "강의나 교재부터 찾아보며 이론을 먼저 익혀요.", axis: "SN" }, // Q32
 
-            // T-F 축 (index 16-23)
-            { q: "회의 중 논쟁이 생기면", a: "논리로 설득", b: "분위기 조율", axis: "TF" }, // Q3
-            { q: "친구에게 조언할 때", a: "팩트 기반 해결책", b: "공감·위로 중심", axis: "TF" }, // Q6
-            { q: "큰 의사결정 전에는", a: "장단점 표 작성", b: "직감 따름", axis: "TF" }, // Q11
-            { q: "프로젝트 오류 시", a: "원인 로깅 후 수정", b: "느낌적 느낌으로 수정", axis: "TF" }, // Q14
-            { q: "친구 생일 선물을 고를 때", a: "서프라이즈 이벤트", b: "필요한 것 직접 물어봄", axis: "TF" }, // Q19
-            { q: "문제 해결 접근 방식은", a: "이론-원칙 우선", b: "사례-경험 우선", axis: "TF" }, // Q20
-            { q: "피드백을 줄 때", a: "직설적 코멘트", b: "완충 표현", axis: "TF" }, // Q25
-            { q: "갈등 상황에서", a: "규칙·원칙 적용", b: "관계·감정 고려", axis: "TF" }, // Q29
+            // Scenario 3: Guima's Plot & Saja Boys (Guima's Rage & Saja Boys)
+            { q: "악귀 '귀마'와의 회의 중 논쟁이 생겼을 때, 당신의 대응 방식은?", a: "논리적으로 설득하여 상대방을 이해시킬게요.", b: "분위기를 조율하고 관계를 해치지 않도록 노력할게요.", axis: "TF" }, // Q3
+            { q: "힘들어하는 멤버에게 조언을 해줘야 한다면?", a: "객관적인 팩트 기반의 해결책을 제시해요.", b: "먼저 공감하고 위로하며 감정적인 지지를 보내요.", axis: "TF" }, // Q6
+            { q: "사자 보이즈와의 대결을 앞두고 큰 의사결정을 해야 한다면?", a: "장단점을 꼼꼼히 분석하고 표로 정리하여 결정해요.", b: "직감이나 팀원들의 분위기를 따르며 결정해요.", axis: "TF" }, // Q11
+            { q: "신곡 'Golden' 뮤직비디오에 기술적 오류가 발생했다면?", a: "원인을 정확히 로깅하고 체계적으로 수정할게요.", b: "전반적인 느낌을 살피며 직관적으로 수정할게요.", axis: "TF" }, // Q14
+            { q: "팬에게 특별한 선물을 준비한다면?", a: "서프라이즈 이벤트를 기획하여 감동을 줄래요.", b: "필요한 것을 직접 물어보고 실용적인 선물을 준비해요.", axis: "TF" }, // Q19
+            { q: "악귀의 문제 해결에 접근할 때, 당신의 우선순위는?", a: "이론과 원칙을 우선시하여 해결 방안을 모색해요.", b: "과거 사례나 경험을 바탕으로 해결 방안을 찾아요.", axis: "TF" }, // Q20
+            { q: "멤버에게 피드백을 줘야 한다면, 당신의 방식은?", a: "직설적이고 명확하게 코멘트해요.", b: "상대방의 감정을 고려하여 완충 표현을 사용해요.", axis: "TF" }, // Q25
+            { q: "팀 내 갈등 상황이 발생했을 때, 당신의 대처는?", a: "규칙과 원칙을 적용하여 공정하게 해결해요.", b: "관계와 감정을 고려하여 조화롭게 해결해요.", axis: "TF" }, // Q29
 
-            // J-P 축 (index 24-31)
-            { q: "주말 계획은", a: "즉흥으로 즐긴다", b: "미리 세세히 짠다", axis: "JP" }, // Q2
-            { q: "휴가 사진 정리 방식은", a: "폴더별 체계적 분류", b: "기분 내키면 정리", axis: "JP" }, // Q4
-            { q: "출장 전날 짐 싸기는", a: "일주일 전 완료", b: "당일 아침에 급히", axis: "JP" }, // Q7
-            { q: "작업 중 알림 음이 울리면", a: "즉시 확인", b: "몰아서 확인", axis: "JP" }, // Q12
-            { q: "칼퇴 직전 추가 요청이 오면", a: "즉시 처리", b: "다음날 처리", axis: "JP" }, // Q17
-            { q: "마감 직전 변경 사항이 생기면", a: "유연하게 수용", b: "계획 유지", axis: "JP" }, // Q22
-            { q: "일정 변화에 대해", a: "즉흥적으로 대응", b: "재계획 필수", axis: "JP" }, // Q26
-            { q: "업무 체크리스트는", a: "세분화·시간 박스", b: "큰 틀만 기록", axis: "JP" }, // Q30
+            // Scenario 4: The Betrayal & New Hope (Revealed Secret & Ending)
+            { q: "2주간의 휴식기가 주어졌다. 당신의 주말 계획은?", a: "미리 세세하게 계획을 짜서 효율적으로 보낼래요.", b: "즉흥적으로 그때그때 하고 싶은 것을 즐길래요.", axis: "JP" }, // Q2
+            { q: "월드 투어 중 찍은 수많은 사진들을 정리하는 방식은?", a: "폴더별로 체계적으로 분류하고 정리해요.", b: "기분 내킬 때마다 조금씩 정리하거나 쌓아둬요.", axis: "JP" }, // Q4
+            { q: "해외 공연 출장 전날 짐 싸기는?", a: "일주일 전부터 미리미리 완료해요.", b: "공연 당일 아침에 급하게 챙겨요.", axis: "JP" }, // Q7
+            { q: "작업 중 핸드폰 알림 음이 울리면?", a: "즉시 확인하고 처리해요.", b: "나중에 몰아서 확인하거나 무시해요.", axis: "JP" }, // Q12
+            { q: "칼퇴 직전, 매니저 바비가 급하게 추가 요청을 한다면?", a: "즉시 처리하고 마무리해요.", b: "내일 처리할 수 있는지 확인하고 미룰 수 있다면 미뤄요.", axis: "JP" }, // Q17
+            { q: "마감 직전, 무대 연출 계획에 갑작스러운 변경이 생겼다면?", a: "유연하게 수용하고 즉흥적으로 대응해요.", b: "원래 계획을 유지하려고 노력하거나 재계획을 세워요.", axis: "JP" }, // Q22
+            { q: "예상치 못한 스케줄 변화가 생겼을 때, 당신의 대응은?", a: "즉흥적으로 대응하며 새로운 상황에 맞춰요.", b: "반드시 재계획을 세워야 마음이 편해요.", axis: "JP" }, // Q26
+            { q: "새로운 앨범 준비 업무 체크리스트를 만든다면?", a: "세분화하고 시간 박스를 정해 꼼꼼히 기록해요.", b: "큰 틀만 기록하고 유연하게 진행해요.", axis: "JP" }, // Q30
         ];
 
-        // 캐릭터 & MBTI 매핑 및 키워드
+        // 캐릭터 & MBTI 매핑 및 키워드 및 설명
         const MBTI_DATA = {
-            "ENTJ": { name: "루미 (Huntr/x)", keywords: "리더십·전략·결단", icon: "👑" },
-            "ENFP": { name: "미라 (Huntr/x)", keywords: "자유·창의·열정", icon: "🌈" },
-            "ENTP": { name: "조이 (Huntr/x)", keywords: "재치·실험·변화", icon: "💡" },
-            "INFJ": { name: "지누 (Saja Boys)", keywords: "이상·비전·헌신", icon: "✨" },
-            "ESFP": { name: "로맨스 사자", keywords: "팬서비스·사교·긍정", icon: "💖" },
-            "INTP": { name: "미스터리 사자", keywords: "분석·호기심·독립", icon: "🔍" },
-            "ESTP": { name: "애비 사자", keywords: "액션·에너지·즉흥", icon: "💥" },
-            "ISFP": { name: "베이비 사자", keywords: "순수·감성·유연", icon: "🌸" },
-            "ISTP": { name: "까치 ‘써씨’", keywords: "관찰·정찰·실용", icon: "🛠️" },
-            "ISFJ": { name: "호랑이 ‘더피’", keywords: "보호·헌신·안정", icon: "🐻" },
-            "INFP": { name: "한약방 아저씨", keywords: "치유·이상주의·교감", icon: "🌿" },
-            "INTJ": { name: "귀마 (악마왕)", keywords: "전략·야망·통제", icon: "😈" },
-            "ESFJ": { name: "매니저 ‘보비’", keywords: "조정·조직·케어", icon: "🤝" },
-            "ENFJ": { name: "실린 (전설 헌터)", keywords: "멘토링·영향력·통찰", icon: "🌟" },
-            "ESTJ": { name: "‘소다팝’ 팬 아줌마", keywords: "열정·리더·규칙", icon: "🎤" },
-            "ISTJ": { name: "다크 지누", keywords: "책임·규율·내성", icon: "🔒" },
+            "ENTJ": { name: "루미 (Huntr/x)", keywords: "리더십·전략·결단", icon: "👑", description: "강력한 리더십과 전략적인 판단으로 팀을 이끄는 당신은, 헌트릭스의 리더 루미처럼 어떤 상황에서도 목표를 향해 나아갑니다.", videoUrl: "https://placehold.co/150x150/60A5FA/FFFFFF/mp4?text=Rumi" },
+            "ENFP": { name: "미라 (Huntr/x)", keywords: "자유·창의·열정", icon: "🌈", description: "자유로운 영혼과 넘치는 창의력, 그리고 뜨거운 열정으로 주변을 밝히는 당신은, 헌트릭스의 자유분방한 미라와 닮았어요.", videoUrl: "https://placehold.co/150x150/FACC15/FFFFFF/mp4?text=Mira" },
+            "ENTP": { name: "조이 (Huntr/x)", keywords: "재치·실험·변화", icon: "💡", description: "번뜩이는 재치와 끊임없는 실험 정신으로 변화를 추구하는 당신은, 헌트릭스의 독특한 매력 조이와 통합니다.", videoUrl: "https://placehold.co/150x150/A78BFA/FFFFFF/mp4?text=Joy" },
+            "INFJ": { name: "지누 (Saja Boys)", keywords: "이상·비전·헌신", icon: "✨", description: "높은 이상과 뚜렷한 비전을 가지고 타인을 위해 헌신하는 당신은, 사자 보이즈의 신비로운 지누처럼 깊은 내면을 가졌어요.", videoUrl: "https://placehold.co/150x150/34D399/FFFFFF/mp4?text=Jinu" },
+            "ESFP": { name: "로맨스 사자", keywords: "팬서비스·사교·긍정", icon: "💖", description: "넘치는 팬서비스와 타고난 사교성, 그리고 긍정적인 에너지로 모두를 즐겁게 하는 당신은, 로맨스 사자처럼 매력적입니다.", videoUrl: "https://placehold.co/150x150/EC4899/FFFFFF/mp4?text=Romance+Lion" },
+            "INTP": { name: "미스터리 사자", keywords: "분석·호기심·독립", icon: "🔍", description: "날카로운 분석력과 끝없는 호기심으로 독립적인 사고를 하는 당신은, 미스터리 사자처럼 자신만의 세계를 탐구합니다.", videoUrl: "https://placehold.co/150x150/6B7280/FFFFFF/mp4?text=Mystery+Lion" },
+            "ESTP": { name: "애비 사자", keywords: "액션·에너지·즉흥", icon: "💥", description: "넘치는 에너지와 즉흥적인 액션으로 상황을 주도하는 당신은, 애비 사자처럼 거침없이 돌진하는 매력이 있어요.", videoUrl: "https://placehold.co/150x150/EF4444/FFFFFF/mp4?text=Abbey+Lion" },
+            "ISFP": { name: "베이비 사자", keywords: "순수·감성·유연", icon: "🌸", description: "순수한 감성과 유연한 사고로 세상을 바라보는 당신은, 베이비 사자처럼 섬세하고 예술적인 감각을 지녔습니다.", videoUrl: "https://placehold.co/150x150/FDBA74/FFFFFF/mp4?text=Baby+Lion" },
+            "ISTP": { name: "까치 ‘써씨’", keywords: "관찰·정찰·실용", icon: "🛠️", description: "예리한 관찰력과 뛰어난 실용성으로 문제를 해결하는 당신은, 까치 '써씨'처럼 조용하지만 강한 존재감을 드러냅니다.", videoUrl: "https://placehold.co/150x150/1F2937/FFFFFF/mp4?text=Kkachi" },
+            "ISFJ": { name: "호랑이 ‘더피’", keywords: "보호·헌신·안정", icon: "🐻", description: "주변 사람들을 보호하고 헌신하며 안정감을 주는 당신은, 호랑이 '더피'처럼 든든하고 믿음직한 존재입니다.", videoUrl: "https://placehold.co/150x150/9CA3AF/FFFFFF/mp4?text=Horangi" },
+            "INFP": { name: "한약방 아저씨", keywords: "치유·이상주의·교감", icon: "🌿", description: "타인을 치유하고 높은 이상을 추구하며 깊이 교감하는 당신은, 한약방 아저씨처럼 따뜻하고 사려 깊은 마음을 가졌어요.", videoUrl: "https://placehold.co/150x150/10B981/FFFFFF/mp4?text=Herbalist" },
+            "INTJ": { name: "귀마 (악마왕)", keywords: "전략·야망·통제", icon: "😈", description: "치밀한 전략과 거대한 야망으로 모든 것을 통제하려는 당신은, 악마왕 귀마처럼 강력한 카리스마를 지녔습니다.", videoUrl: "https://placehold.co/150x150/000000/FFFFFF/mp4?text=Guima" },
+            "ESFJ": { name: "매니저 ‘보비’", keywords: "조정·조직·케어", icon: "🤝", description: "뛰어난 조정 능력과 체계적인 조직력으로 모두를 케어하는 당신은, 매니저 '보비'처럼 팀의 든든한 버팀목이 됩니다.", videoUrl: "https://placehold.co/150x150/F97316/FFFFFF/mp4?text=Bobby" },
+            "ENFJ": { name: "실린 (전설 헌터)", keywords: "멘토링·영향력·통찰", icon: "🌟", description: "타인을 멘토링하고 긍정적인 영향력을 행사하며 통찰력 있는 당신은, 전설 헌터 실린처럼 주변에 영감을 줍니다.", videoUrl: "https://placehold.co/150x150/8B5CF6/FFFFFF/mp4?text=Celine" },
+            "ESTJ": { name: "‘소다팝’ 팬 아줌마", keywords: "열정·리더·규칙", icon: "🎤", description: "넘치는 열정과 타고난 리더십, 그리고 명확한 규칙을 중시하는 당신은, '소다팝' 팬 아줌마처럼 강한 추진력을 가졌어요.", videoUrl: "https://placehold.co/150x150/DC2626/FFFFFF/mp4?text=SodaPop+Fan" },
+            "ISTJ": { name: "다크 지누", keywords: "책임·규율·내성", icon: "🔒", description: "강한 책임감과 엄격한 규율을 지키며 내성적인 당신은, 다크 지누처럼 묵묵히 자신의 길을 가는 믿음직한 존재입니다.", videoUrl: "https://placehold.co/150x150/4B5563/FFFFFF/mp4?text=Dark+Jinu" },
         };
 
         // MBTI 궁합 (잘 맞는 친구 / 앙숙 친구) - 단순화된 매핑
         const COMPATIBILITY_MAP = {
-            "ENTJ": { compatible: "INFP", opposite: "ISFP" },
-            "ENFP": { compatible: "INTJ", opposite: "ISTJ" },
-            "ENTP": { compatible: "INFJ", opposite: "ISFJ" },
-            "INFJ": { compatible: "ENTP", opposite: "ESTP" },
-            "ESFP": { compatible: "ISTJ", opposite: "INTJ" },
-            "INTP": { compatible: "ENFJ", opposite: "ESFJ" },
-            "ESTP": { compatible: "INFJ", opposite: "INFP" },
-            "ISFP": { compatible: "ENTJ", opposite: "ESTJ" },
-            "ISTP": { compatible: "ESFJ", opposite: "ENFJ" },
-            "ISFJ": { compatible: "ENTP", opposite: "INTP" },
-            "INFP": { compatible: "ENTJ", opposite: "ESTP" },
-            "INTJ": { compatible: "ENFP", opposite: "ESFP" },
-            "ESFJ": { compatible: "ISTP", opposite: "INTP" },
-            "ENFJ": { compatible: "INTP", opposite: "ISTP" },
-            "ESTJ": { compatible: "ISFP", opposite: "INFP" },
-            "ISTJ": { compatible: "ESFP", opposite: "ENFP" },
+            "ENTJ": { compatible: "INFP", compatible_desc: "따뜻한 마음으로 타인을 치유하고 이상을 추구하는 친구", opposite: "ISFP" },
+            "ENFP": { compatible: "INTJ", compatible_desc: "치밀한 전략과 야망을 가진 통찰력 있는 친구", opposite: "ISTJ" },
+            "ENTP": { compatible: "INFJ", compatible_desc: "깊은 이상과 비전을 가지고 헌신하는 친구", opposite: "ISFJ" },
+            "INFJ": { compatible: "ENTP", compatible_desc: "번뜩이는 재치와 실험 정신으로 변화를 추구하는 친구", opposite: "ESTP" },
+            "ESFP": { compatible: "ISTJ", compatible_desc: "강한 책임감과 규율을 지키는 믿음직한 친구", opposite: "INTJ" },
+            "INTP": { compatible: "ENFJ", compatible_desc: "타인을 멘토링하고 긍정적인 영향력을 주는 친구", opposite: "ESFJ" },
+            "ESTP": { compatible: "INFJ", compatible_desc: "깊은 이상과 비전을 가지고 헌신하는 친구", opposite: "INFP" },
+            "ISFP": { compatible: "ENTJ", compatible_desc: "강력한 리더십과 전략적인 판단을 하는 친구", opposite: "ESTJ" },
+            "ISTP": { compatible: "ESFJ", compatible_desc: "뛰어난 조정 능력과 조직력으로 모두를 케어하는 친구", opposite: "ENFJ" },
+            "ISFJ": { compatible: "ENTP", compatible_desc: "번뜩이는 재치와 실험 정신으로 변화를 추구하는 친구", opposite: "INTP" },
+            "INFP": { compatible: "ENTJ", compatible_desc: "강력한 리더십과 전략적인 판단을 하는 친구", opposite: "ESTP" },
+            "INTJ": { compatible: "ENFP", compatible_desc: "자유로운 영혼과 넘치는 창의력을 가진 친구", opposite: "ESFP" },
+            "ESFJ": { compatible: "ISTP", compatible_desc: "예리한 관찰력과 실용성으로 문제를 해결하는 친구", opposite: "INTP" },
+            "ENFJ": { compatible: "INTP", compatible_desc: "날카로운 분석력과 끝없는 호기심을 가진 친구", opposite: "ISTP" },
+            "ESTJ": { compatible: "ISFP", compatible_desc: "순수한 감성과 유연한 사고로 세상을 바라보는 친구", opposite: "INFP" },
+            "ISTJ": { compatible: "ESFP", compatible_desc: "넘치는 팬서비스와 타고난 사교성을 가진 친구", opposite: "ENFP" },
         };
 
         // 테스트 시작 함수
@@ -406,14 +420,27 @@
             if (characterData) {
                 resultCharacterNameElem.textContent = characterData.name;
                 resultMbtiElem.textContent = `MBTI: ${mbtiType}`;
-                resultKeywordsElem.textContent = characterData.keywords;
-                characterIconElem.textContent = characterData.icon;
+                resultDescriptionElem.textContent = characterData.description;
+                
+                // 비디오 설정
+                characterVideoElem.querySelector('source').src = characterData.videoUrl;
+                characterVideoElem.load(); // 비디오 소스 변경 후 다시 로드
+                characterVideoElem.classList.remove('hidden'); // 비디오 표시
+                characterIconElem.classList.add('hidden'); // 임시 아이콘 숨김
+
+                // 비디오 로드 실패 시 대체 아이콘 표시 (onerror는 source 태그에 직접 적용 불가하여 JS로 처리)
+                characterVideoElem.onerror = () => {
+                    characterVideoElem.classList.add('hidden');
+                    characterIconElem.classList.remove('hidden');
+                    console.error('Video failed to load for:', characterData.name);
+                };
+
 
                 // 잘 맞는 친구
                 const compatibleChar = MBTI_DATA[compatibility.compatible];
                 compatibleFriendNameElem.textContent = compatibleChar.name;
                 compatibleFriendMbtiElem.textContent = `MBTI: ${compatibility.compatible}`;
-                compatibleFriendKeywordsElem.textContent = compatibleChar.keywords;
+                compatibleFriendDescriptionElem.textContent = compatibility.compatible_desc;
 
                 // 앙숙 친구
                 const oppositeChar = MBTI_DATA[compatibility.opposite];
@@ -424,11 +451,12 @@
             } else {
                 resultCharacterNameElem.textContent = "결과를 찾을 수 없습니다.";
                 resultMbtiElem.textContent = "";
-                resultKeywordsElem.textContent = "";
-                characterIconElem.textContent = "❓";
+                resultDescriptionElem.textContent = "";
+                characterVideoElem.classList.add('hidden'); // 비디오 숨김
+                characterIconElem.classList.remove('hidden'); // 임시 아이콘 표시
                 compatibleFriendNameElem.textContent = "";
                 compatibleFriendMbtiElem.textContent = "";
-                compatibleFriendKeywordsElem.textContent = "";
+                compatibleFriendDescriptionElem.textContent = "";
                 oppositeFriendNameElem.textContent = "";
                 oppositeFriendMbtiElem.textContent = "";
                 oppositeFriendKeywordsElem.textContent = "";
@@ -442,6 +470,11 @@
             currentQuestionIndex = 0;
             answers.fill(-1);
             progressBar.style.width = '0%';
+            // 테스트 재시작 시 비디오와 아이콘 상태 초기화
+            characterVideoElem.classList.add('hidden');
+            characterIconElem.classList.remove('hidden');
+            characterVideoElem.querySelector('source').src = ""; // 비디오 소스 초기화
+            characterVideoElem.load(); // 비디오 로드 상태 초기화
         }
 
         // 이벤트 리스너
